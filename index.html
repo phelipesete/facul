@@ -42,7 +42,7 @@ window.onload = function() {
     const camera = { y: 0 };
 
     const player = {
-        x: 400, y: 350, width: 60, height: 60,
+        x: 400, y: 350, width: 75, height: 75,
         speed: 6, velX: 0, velY: 0, jumping: false, facingLeft: false
     };
 
@@ -56,7 +56,7 @@ window.onload = function() {
 
         platforms.push({
             x: newX,
-            y: 400 - (i * 105), // Distância vertical de 105px (fácil)
+            y: 400 - (i * 140), // Distância vertical de 105px (fácil)
             width: 140, height: 25
         });
     }
