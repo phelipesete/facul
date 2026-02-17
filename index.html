@@ -3,17 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Super Julinha</title>
+    <title>Mario - Plataformas Ajustadas</title>
     <style>
-        body { margin: 0; background-color: #111; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; touch-action: none; font-family: 'Arial', sans-serif; }
+        body { margin: 0; background-color: #111; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; touch-action: none; font-family: sans-serif; }
         #game-container { position: relative; width: 100%; max-width: 800px; aspect-ratio: 16 / 9; background-color: #5C94FC; border: 4px solid #000; overflow: hidden; }
         canvas { width: 100%; height: 100%; image-rendering: pixelated; }
-        
-        /* Controles Mobile */
         .controls { position: absolute; bottom: 15px; width: 100%; display: flex; justify-content: space-between; padding: 0 30px; box-sizing: border-box; pointer-events: none; }
         .d-pad, .action-buttons { display: flex; gap: 20px; pointer-events: auto; }
-        .btn { width: 70px; height: 70px; background: rgba(255, 255, 255, 0.3); border: 4px solid #fff; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: white; user-select: none; cursor: pointer; font-size: 24px; -webkit-tap-highlight-color: transparent; }
-        .btn:active { background: rgba(255, 255, 255, 0.7); transform: scale(0.9); }
+        .btn { width: 70px; height: 70px; background: rgba(255, 255, 255, 0.3); border: 4px solid #fff; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: white; user-select: none; cursor: pointer; font-size: 24px; }
         #jumpBtn { background: rgba(255, 0, 0, 0.4); width: 85px; height: 85px; }
     </style>
 </head>
@@ -21,15 +18,12 @@
 
 <div id="game-container">
     <canvas id="marioCanvas"></canvas>
-    
     <div class="controls">
         <div class="d-pad">
             <div class="btn" id="leftBtn">◀</div>
             <div class="btn" id="rightBtn">▶</div>
         </div>
-        <div class="action-buttons">
-            <div class="btn" id="jumpBtn">PULO</div>
-        </div>
+        <div class="action-buttons"><div class="btn" id="jumpBtn">PULO</div></div>
     </div>
 </div>
 
@@ -37,189 +31,106 @@
 window.onload = function() {
     const canvas = document.getElementById('marioCanvas');
     const ctx = canvas.getContext('2d');
+    canvas.width = 800; canvas.height = 450;
 
-    // Resolução interna
-    canvas.width = 800;
-    canvas.height = 450;
-
-    // --- CARREGAMENTO DE ASSETS ---
     const marioImg = new Image();
-    // Link de um sprite do Mario (pode trocar pela sua foto aqui)
-    marioImg.src = 'https://raw.githubusercontent.com/phelipesete/game/refs/heads/main/julinhaa.png ';
+    marioImg.src = 'https://github.com/phelipesete/game/blob/main/julinhaa.png';
 
-    // Variáveis de Ambiente
     const gravity = 0.6;
     const friction = 0.85;
     let gameWon = false;
     const camera = { y: 0 };
 
-    // Jogador
     const player = {
-        x: 400,
-        y: 350,
-        width: 45,
-        height: 45,
-        speed: 6,
-        velX: 0,
-        velY: 0,
-        jumping: false,
-        facingLeft: false // Controla para onde a imagem olha
+        x: 400, y: 350, width: 45, height: 45,
+        speed: 6, velX: 0, velY: 0, jumping: false, facingLeft: false
     };
 
-    // Gerar Plataformas (Chão + 15 degraus)
+    // GERAÇÃO DE FASE JUSTA
     const platforms = [{ x: 0, y: 400, width: 800, height: 100 }];
-    for (let i = 1; i <= 15; i++) {
+    for (let i = 1; i <= 20; i++) {
+        const lastP = platforms[i - 1];
+        let newX = lastP.x + (Math.random() * 260 - 130); // Max 130px de distância lateral
+        if (newX < 50) newX = 50;
+        if (newX > canvas.width - 150) newX = canvas.width - 190;
+
         platforms.push({
-            x: Math.random() * (canvas.width - 150),
-            y: 400 - (i * 130),
-            width: 140,
-            height: 25
+            x: newX,
+            y: 400 - (i * 105), // Distância vertical de 105px (fácil)
+            width: 140, height: 25
         });
     }
 
-    // Objetivo final na última plataforma
     const lastP = platforms[platforms.length - 1];
     const goal = { x: lastP.x + 50, y: lastP.y - 120, width: 15, height: 120 };
 
-    // Estados de Input
     const keys = {};
     let touchLeft = false, touchRight = false;
-
-    // Listeners Teclado
     window.addEventListener("keydown", e => keys[e.code] = true);
     window.addEventListener("keyup", e => keys[e.code] = false);
 
-    // Listeners Touch
     function setupTouch(id, cb) {
         const el = document.getElementById(id);
         el.addEventListener('touchstart', (e) => { e.preventDefault(); cb(true); });
         el.addEventListener('touchend', (e) => { e.preventDefault(); cb(false); });
     }
-
     setupTouch('leftBtn', v => touchLeft = v);
     setupTouch('rightBtn', v => touchRight = v);
     document.getElementById('jumpBtn').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        if (!player.jumping && !gameWon) { player.velY = -16; player.jumping = true; }
+        e.preventDefault(); if (!player.jumping && !gameWon) { player.velY = -16; player.jumping = true; }
     });
 
     function update() {
         if (gameWon) return;
+        if (keys["ArrowRight"] || touchRight) { player.velX < player.speed && player.velX++; player.facingLeft = false; }
+        if (keys["ArrowLeft"] || touchLeft) { player.velX > -player.speed && player.velX--; player.facingLeft = true; }
+        if ((keys["Space"] || keys["ArrowUp"]) && !player.jumping) { player.velY = -16; player.jumping = true; }
 
-        // Lógica de Movimento
-        if (keys["ArrowRight"] || touchRight) { 
-            if (player.velX < player.speed) player.velX++; 
-            player.facingLeft = false;
-        }
-        if (keys["ArrowLeft"] || touchLeft) { 
-            if (player.velX > -player.speed) player.velX--; 
-            player.facingLeft = true;
-        }
+        player.velX *= friction; player.velY += gravity;
+        player.x += player.velX; player.y += player.velY;
 
-        if ((keys["Space"] || keys["ArrowUp"]) && !player.jumping) {
-            player.velY = -16;
-            player.jumping = true;
-        }
-
-        // Aplicar Física
-        player.velX *= friction;
-        player.velY += gravity;
-        player.x += player.velX;
-        player.y += player.velY;
-
-        // Câmera Suave Vertical
         let targetCamY = player.y - canvas.height / 2;
-        if (targetCamY < camera.y) {
-            camera.y += (targetCamY - camera.y) * 0.1;
-        }
+        if (targetCamY < camera.y) camera.y += (targetCamY - camera.y) * 0.1;
 
-        // Colisões com Plataformas
         player.jumping = true;
         for (let p of platforms) {
-            if (player.x + 10 < p.x + p.width && 
-                player.x + player.width - 10 > p.x &&
-                player.y + player.height > p.y && 
-                player.y + player.height < p.y + p.height + player.velY + 1) {
-                
-                if (player.velY > 0) {
-                    player.jumping = false;
-                    player.y = p.y - player.height;
-                    player.velY = 0;
-                }
+            if (player.x + 10 < p.x + p.width && player.x + player.width - 10 > p.x &&
+                player.y + player.height > p.y && player.y + player.height < p.y + p.height + player.velY + 1) {
+                if (player.velY > 0) { player.jumping = false; player.y = p.y - player.height; player.velY = 0; }
             }
         }
 
-        // Vitória
-        if (player.x < goal.x + goal.width && player.x + player.width > goal.x &&
-            player.y < goal.y + goal.height && player.y + player.height > goal.y) {
-            gameWon = true;
-        }
-
-        // Limites
+        if (player.x < goal.x + goal.width && player.x + player.width > goal.x && player.y < goal.y + goal.height && player.y + player.height > goal.y) gameWon = true;
         if (player.x < 0) player.x = 0;
         if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
-
-        // Reset ao Cair
-        if (player.y > camera.y + canvas.height + 200) {
-            player.x = 400; player.y = 350; player.velY = 0; camera.y = 0;
-        }
+        if (player.y > camera.y + canvas.height + 200) { player.x = 400; player.y = 350; player.velY = 0; camera.y = 0; }
     }
 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
         ctx.save();
         ctx.translate(0, -camera.y);
-
-        // Desenhar Chão e Plataformas
         for (let p of platforms) {
-            ctx.fillStyle = "#8B4513"; // Marrom
-            ctx.fillRect(p.x, p.y, p.width, p.height);
-            ctx.fillStyle = "#2ECC71"; // Grama
-            ctx.fillRect(p.x, p.y, p.width, 8);
+            ctx.fillStyle = "#8B4513"; ctx.fillRect(p.x, p.y, p.width, p.height);
+            ctx.fillStyle = "#2ECC71"; ctx.fillRect(p.x, p.y, p.width, 8);
         }
+        ctx.fillStyle = "#333"; ctx.fillRect(goal.x, goal.y, goal.width, goal.height);
+        ctx.fillStyle = "red"; ctx.fillRect(goal.x + goal.width, goal.y, 30, 25);
 
-        // Desenhar Mastro de Vitória
-        ctx.fillStyle = "#333";
-        ctx.fillRect(goal.x, goal.y, goal.width, goal.height);
-        ctx.fillStyle = "red";
-        ctx.fillRect(goal.x + goal.width, goal.y, 30, 25);
-
-        // Desenhar Jogador com Espelhamento (Flip)
         if (marioImg.complete) {
             ctx.save();
-            if (player.facingLeft) {
-                // Inverte a imagem horizontalmente
-                ctx.translate(player.x + player.width, player.y);
-                ctx.scale(-1, 1);
-                ctx.drawImage(marioImg, 0, 0, player.width, player.height);
-            } else {
-                ctx.drawImage(marioImg, player.x, player.y, player.width, player.height);
-            }
+            if (player.facingLeft) { ctx.translate(player.x + player.width, player.y); ctx.scale(-1, 1); ctx.drawImage(marioImg, 0, 0, player.width, player.height); }
+            else { ctx.drawImage(marioImg, player.x, player.y, player.width, player.height); }
             ctx.restore();
-        } else {
-            ctx.fillStyle = "red";
-            ctx.fillRect(player.x, player.y, player.width, player.height);
         }
-
         ctx.restore();
 
-        // Tela de Vitória
         if (gameWon) {
-            ctx.fillStyle = "rgba(0,0,0,0.8)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#FFF";
-            ctx.textAlign = "center";
-            ctx.font = "bold 40px Arial";
-            ctx.fillText("VITÓRIA!", canvas.width/2, canvas.height/2);
-            ctx.font = "20px Arial";
-            ctx.fillText("Você dominou a montanha!", canvas.width/2, canvas.height/2 + 50);
+            ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#FFF"; ctx.textAlign = "center"; ctx.font = "bold 40px Arial"; ctx.fillText("VITÓRIA!", canvas.width/2, canvas.height/2);
         }
-
-        requestAnimationFrame(draw);
-        update();
+        requestAnimationFrame(draw); update();
     }
-
     draw();
 };
 </script>
