@@ -42,7 +42,7 @@ window.onload = function() {
     const camera = { y: 0 };
 
     const player = {
-        x: 400, y: 350, width: 75, height: 75,
+        x: 400, y: 350, width: 90, height: 90,
         speed: 6, velX: 0, velY: 0, jumping: false, facingLeft: false
     };
 
@@ -50,13 +50,13 @@ window.onload = function() {
     const platforms = [{ x: 0, y: 400, width: 800, height: 100 }];
     for (let i = 1; i <= 20; i++) {
         const lastP = platforms[i - 1];
-        let newX = lastP.x + (Math.random() * 260 - 130); // Max 130px de distância lateral
+        let newX = lastP.x + (Math.random() * 400 - 200); // Max 130px de distância lateral
         if (newX < 50) newX = 50;
         if (newX > canvas.width - 150) newX = canvas.width - 190;
 
         platforms.push({
             x: newX,
-            y: 400 - (i * 140), // Distância vertical de 105px (fácil)
+            y: 400 - (i * 165), // Distância vertical de 105px (fácil)
             width: 140, height: 25
         });
     }
