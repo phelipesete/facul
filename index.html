@@ -34,7 +34,7 @@ window.onload = function() {
     canvas.width = 800; canvas.height = 450;
 
     const marioImg = new Image();
-    marioImg.src = 'https://github.com/phelipesete/game/blob/main/julinhaa.png';
+    marioImg.src = 'https://raw.githubusercontent.com/phelipesete/game/refs/heads/main/julinhaa.png';
 
     const gravity = 0.6;
     const friction = 0.85;
@@ -42,7 +42,7 @@ window.onload = function() {
     const camera = { y: 0 };
 
     const player = {
-        x: 400, y: 350, width: 45, height: 45,
+        x: 400, y: 350, width: 60, height: 60,
         speed: 6, velX: 0, velY: 0, jumping: false, facingLeft: false
     };
 
